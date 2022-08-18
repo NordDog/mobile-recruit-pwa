@@ -1,6 +1,20 @@
 const { defineConfig } = require("@vue/cli-service");
 
 module.exports = defineConfig({
+  //подменяем индексный файл на index.php
+  indexPath: 'index.php',
+  chainWebpack: config => {
+    if(process.env.NODE_ENV === 'production'){
+      config
+        .plugin('html')
+        .tap(args => {
+          args[0].template = './public/index.php';
+          //args[0].minify.removeAttributeQuotes = false
+          return args;
+        })
+    }
+  },
+
   publicPath: process.env.NODE_ENV == "development" ? "" : "/recruitApp/pwa/",
   transpileDependencies: ["vuetify"],
   pwa:{

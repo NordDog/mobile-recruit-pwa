@@ -1,28 +1,14 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
-import axios from 'axios'
+// import axios from 'axios'
 Vue.use(Vuex)
 
 export default new Vuex.Store({
   state: {
     userid:'',
-    url: 'https://btrx.site/recruitApp/2.0/php/api/ajax.php',
+    url: '',
     objs:[],
     object:'',
-  },
-  getters: {
-    getObjs(state){
-      return state.objs
-    },
-    getUrl(state){
-      return state.url
-    },
-    getUserId(state){
-      return state.userid
-    },
-    getObjectId(state){
-      return state.object
-    }
   },
   mutations: {
     setObjs(state, data){
@@ -33,10 +19,13 @@ export default new Vuex.Store({
     },
     setObjectID(state,data){
       state.object = data
+    },
+    setUrl(state){
+      state.url = 'https://'+this.$app.serverURL+'/recruitApp/2.0/php/api/ajax.php';
     }
   },
   actions: {
-  async  loadUserID({commit}){
+/*     async  loadUserID({commit}){
       var bodyFormData = new FormData();
 
       bodyFormData.append('action', 'getUserId')
@@ -44,7 +33,7 @@ export default new Vuex.Store({
 
      await axios({
         method: 'post',
-        url: 'https://btrx.site/recruitApp/2.0/php/api/ajax.php',
+        url: 'https://'+this.$app.serverURL+'/recruitApp/2.0/php/api/ajax.php',
 
         data: bodyFormData,
         headers: { "Content-Type": "multipart/form-data" },
@@ -60,8 +49,26 @@ export default new Vuex.Store({
 
 
 
+    }, */
+    requestUserId({commit}){
+      commit('setUserID', BX.message('USER_ID')); 
+    },
+    init({commit}){
+      commit('setUrl');
+    }
+  },  
+  getters: {
+    getObjs(state){
+      return state.objs
+    },
+    getUrl(state){
+      return state.url
+    },
+    getUserId(state){
+      return state.userid
+    },
+    getObjectId(state){
+      return state.object
     }
   },
-  modules: {
-  }
 })
