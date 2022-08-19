@@ -38,7 +38,7 @@
               @click="edit(item.userId)"
             >
               <td>{{ item.FULL_NAME }}</td>
-              <td>{{ item.VACANCY_NAME }}</td>
+              <td>{{ item.POS_NAME }}</td>
               <td>{{ item.STAGE_NAME }}</td>
             </tr>
             <tr v-if="items.length == 0">
@@ -116,7 +116,7 @@ export default {
         type: 'fired',
         entityId: this.id
       }
-      BX.rest.callMethod('recruit.aspirants.archive', params, res=>{
+      BX.rest.callMethod('recruit.aspirants.list', params, res=>{
         this.items = res.data();
         this.loader = false;
       });
