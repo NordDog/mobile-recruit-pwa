@@ -23,8 +23,8 @@
           <tbody>
             <tr
               v-for="item in items"
-              :key="item.userId"
-              @click="edit(item.userId)"
+              :key="item.ID"
+              @click="edit(item.ID)"
             >
               <td>{{ item.FULL_NAME }}</td>
               <td>{{ item.POS_NAME }}</td>
