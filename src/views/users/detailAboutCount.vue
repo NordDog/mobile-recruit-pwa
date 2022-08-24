@@ -15,14 +15,14 @@
         <div class="d-flex justify-space-between mb-2">
           <div>
             <p class="text-caption">Дата Собеседования:</p>
-            <p class="text-caption">{{ contdata.UF_RECRUIT_INTERVIEW }}</p>
+            <p class="text-caption">{{ contdata.UF_RECRUIT_INTERVIEW | dateTimeToLocal }}</p>
           </div>
           <div>
             <v-btn
               color="primary"
               elevation="2"
               x-small
-              @click="history = !history"
+              @click="getHistory()"
               >История статусов</v-btn
             >
           </div>
@@ -401,14 +401,14 @@
           ref="issuedDateMenu"
           v-model="issuedDateMenu"
           :close-on-content-click="false"
-          :return-value.sync="issuedDate"
+          :return-value.sync="contdata.REQ_IDENT_DOC_DATE"
           transition="scale-transition"
           offset-y
           min-width="auto"
         >
           <template v-slot:activator="{ on, attrs }">
             <v-text-field
-              v-model="issuedDate"
+              :value="contdata.REQ_IDENT_DOC_DATE | dateToLocal"
               label="Дата выдачи паспорта"
               outlined
               append-icon="mdi-calendar"
@@ -417,31 +417,29 @@
               v-on="on"
             ></v-text-field>
           </template>
-          <v-date-picker v-model="issuedDate" no-title scrollable>
+          <v-date-picker v-model="contdata.REQ_IDENT_DOC_DATE" no-title scrollable>
             <v-spacer></v-spacer>
-            <v-btn text color="primary" @click="issuedDateMenu = false">
-              Cancel
+            <v-btn text color="red" @click="issuedDateMenu = false">
+              Отменить
             </v-btn>
             <v-btn
               text
               color="primary"
-              @click="$refs.issuedDateMenu.save(issuedDate)"
+              @click="$refs.issuedDateMenu.save(contdata.REQ_IDENT_DOC_DATE)"
             >
-              OK
+              Сохранить
             </v-btn>
           </v-date-picker>
         </v-menu>
 
-        <!-- <v-text-field v-model="second_name" label="Адрес регистрации" outlined></v-text-field> -->
-
         <v-text-field
-          v-model="registrationAddress"
+          v-model="contdata.ADDRESSES.REG.ADDR_ADDRESS"
           label="Адрес регистрации"
           outlined
         ></v-text-field>
 
         <v-text-field
-          v-model="addressOfActualResidence"
+          v-model="contdata.ADDRESSES.FACT.ADDR_ADDRESS"
           label="Адрес фактического пребывания"
           outlined
         ></v-text-field>
@@ -462,8 +460,8 @@
             <v-expansion-panel-content>
               <v-row>
                 <v-col
-                  v-for="item in images"
-                  :key="item.name"
+                  v-for="item in contdata.FILES"
+                  :key="item.id"
                   class="d-flex child-flex"
                   cols="4"
                 >
@@ -501,19 +499,20 @@
         </v-text-field>
 
         <v-text-field
-          v-model="comment"
+          v-model="contdata.COMMENTS"
           label="Коментарий"
           outlined
         ></v-text-field>
       </div>
       <div class="row justify-center pa-3">
-        <v-btn @click="saveUser()">Сохранить</v-btn>
+        <v-btn @click="saveData()">Сохранить</v-btn>
       </div>
     </v-sheet>
+
     <v-dialog
       transition="dialog-bottom-transition"
       max-width="600"
-      v-model="history"
+      v-model="historyDialog"
     >
       <v-card>
         <v-toolbar color="primary" dark>История статусов</v-toolbar>
@@ -524,24 +523,24 @@
                 <tr>
                   <th class="text-left text-caption">Дата</th>
                   <th class="text-left text-caption">Обьект</th>
+                  <th class="text-left text-caption">Вакансия</th>
                   <th class="text-left text-caption">Статус</th>
-                  <th class="text-left text-caption">Причина</th>
                 </tr>
               </thead>
 
               <tbody>
                 <tr v-for="item in historyList" :key="item.date">
-                  <td class="text-caption">{{ item.date }}</td>
-                  <td class="text-caption">{{ item.object }}</td>
-                  <td class="text-caption">{{ item.currstatus }}</td>
-                  <td class="text-caption">{{ item.reason }}</td>
+                  <td class="text-caption">{{ item.DATE_CREATE }}</td>
+                  <td class="text-caption">{{ item.OBJ_NAME }}</td>
+                  <td class="text-caption">{{ item.VAC_NAME }}</td>
+                  <td class="text-caption">{{ item.STATUS }}</td>
                 </tr>
               </tbody>
             </template>
           </v-simple-table>
         </v-card-text>
         <v-card-actions class="justify-end">
-          <v-btn text @click="history = false">Закрыть</v-btn>
+          <v-btn text @click="historyDialog = false">Закрыть</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -580,7 +579,6 @@ export default {
       appsID: "",
       galleryDialog: false,
       history: false,
-      historyList: [],
       title: "",
       loader: true,
       object: "",
@@ -642,7 +640,10 @@ export default {
       passLMKList: [],
       passSSList: [],
       docTypesList: [],
-      sitizenshipList: []
+      sitizenshipList: [],
+      historyList: [],
+      historyDialog: false,
+      historyLoad: false
     };
   },
   methods: {
@@ -880,6 +881,39 @@ export default {
               this.contdata.DIVIDED_INTERVIEW[isHours ? "HOURS" : "MINUTES"] = time;
           });
     },
+    getHistory(){
+      BX.rest.callMethod('recruit.aspirants.gethistory', {contactid: this.contdata.CONT_ID}, res=>{
+        this.historyLoad = true;
+        this.historyDialog = true;
+        this.historyList = res.data();
+        this.historyLoad = false;
+      });
+    },
+    async saveData(){
+      let base64files = await this.fileListToBase64(this.files);
+      BX.rest.callMethod('recruit.aspirants.savedata', {fields: this.contdata, files: base64files}, res=>{
+        console.log(res.data());
+      })
+    },
+    async fileListToBase64(files){
+      function getBase64(file) {
+          let fName = file.name;
+          let reader = new FileReader()
+          return new Promise(resolve => {
+          reader.onload = ev => {
+            resolve({base: ev.target.result.split(',')[1], name: fName})
+          }
+          reader.readAsDataURL(file)
+        })
+      }
+      let promises = []
+
+      for (let i = 0; i < files.length; i++) {
+        promises.push(getBase64(files[i]))
+      }
+
+      return await Promise.all(promises);
+    },
   },
   computed: {
     ...mapGetters(["getUrl", "getObjectId", "getObjs"]),
@@ -911,8 +945,8 @@ export default {
   },
   async mounted() {
     //await this.getUser();
-    this.getUserData();
     this.getDealStages();
+    this.getUserData();
     BX.rest.callMethod("crm.contact.userfield.list", {filter:{FIELD_NAME: 'UF_CRM_5F929626B7513'}}, res=> {this.sexList = res.data()[0].LIST});
     BX.rest.callMethod("crm.contact.userfield.list", {filter:{FIELD_NAME: 'UF_RECRUIT_DOC_TYPES'}}, res=> {this.docTypesList = res.data()[0].LIST});
     BX.rest.callMethod("crm.deal.userfield.list", {filter:{FIELD_NAME: 'UF_RECRUIT_PASS_LMK'}}, res=> {this.passLMKList = res.data()[0].LIST});
